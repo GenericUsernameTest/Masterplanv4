@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "data/*",
+    "node_modules/*",
+    ".vscode/*"
+  ],
+  "wait": 500
+}

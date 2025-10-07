@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI Analyze Site (Access Edge)",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "scripts/ai-task1.js",
+        "data/site-1759478539383-analysis.json"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Watch AI Analysis",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "watch-data"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "AI Analyze Latest Site",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "annotate-latest"],
+      "problemMatcher": []
+    }
+  ]
+}
