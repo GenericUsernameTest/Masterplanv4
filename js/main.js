@@ -188,6 +188,21 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
 
   // Determine API base dynamically so it works in Codespaces/containers or when proxied
   const isGitHubPages = /github\.io$/i.test(window.location.hostname);
+  // Allow API base override via ?apiBase=... and persist in localStorage
+  try {
+    const urlApiBase = new URLSearchParams(window.location.search).get('apiBase');
+    if (urlApiBase) {
+      localStorage.setItem('API_BASE_OVERRIDE', urlApiBase);
+      window.API_BASE = urlApiBase;
+      console.log(`🔧 API_BASE override from URL param: ${urlApiBase}`);
+    } else {
+      const stored = localStorage.getItem('API_BASE_OVERRIDE');
+      if (stored && !window.API_BASE) {
+        window.API_BASE = stored;
+        console.log(`🔧 API_BASE restored from localStorage: ${stored}`);
+      }
+    }
+  } catch (e) { /* ignore */ }
   const explicitApiBase = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : null;
   const apiBase = (function() {
     try {

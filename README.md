@@ -65,6 +65,16 @@ Deploy the Node server (Docker image provided) to a host (Render/Fly/Cloud Run/e
 ```
 When `window.API_BASE` is defined, even on GitHub Pages the app will POST to `${API_BASE}/save-analysis` instead of offline downloading.
 
+#### Temporary / On-the-fly Override
+You can also append a query parameter when testing on Pages:
+```
+https://<user>.github.io/<repo>/?apiBase=https://your-api-host
+```
+This value is persisted in `localStorage` (`API_BASE_OVERRIDE`). Remove it by running in the browser console:
+```
+localStorage.removeItem('API_BASE_OVERRIDE'); location.reload();
+```
+
 To enable Pages:
 1. Open Repository Settings → Pages.
 2. Under Build and deployment, choose GitHub Actions (the workflow will appear automatically after first successful run).
