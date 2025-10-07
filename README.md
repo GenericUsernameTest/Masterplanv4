@@ -75,6 +75,20 @@ This value is persisted in `localStorage` (`API_BASE_OVERRIDE`). Remove it by ru
 localStorage.removeItem('API_BASE_OVERRIDE'); location.reload();
 ```
 
+#### Using GitHub Pages Secrets for config.js
+The Pages workflow can inject secrets into `dist/config.js`. Define repository Action secrets:
+
+| Secret Name    | Purpose                                   |
+|----------------|--------------------------------------------|
+| MAPBOX_TOKEN   | Mapbox access token (omit to use fallback) |
+| API_BASE       | Remote API base (e.g. https://api.example) |
+
+Add them in: Settings → Secrets and variables → Actions. On deployment the workflow writes:
+```
+window.RUNTIME_CONFIG = { MAPBOX_TOKEN: <secret>, API_BASE: <secret>, GENERATED_AT: <timestamp> };
+```
+If secrets are empty the client falls back to offline mode.
+
 To enable Pages:
 1. Open Repository Settings → Pages.
 2. Under Build and deployment, choose GitHub Actions (the workflow will appear automatically after first successful run).

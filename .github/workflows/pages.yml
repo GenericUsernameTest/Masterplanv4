@@ -39,6 +39,15 @@ jobs:
           cp -R houses dist/houses
           cp -R components dist/components
           echo "Deployed at $(date)" > dist/version.txt
+          # Generate config.js from secrets (optional; secrets must be defined in repo settings)
+          cat > dist/config.js <<'CFG'
+window.RUNTIME_CONFIG = {
+  MAPBOX_TOKEN: ${MAPBOX_TOKEN},
+  API_BASE: ${API_BASE},
+  GENERATED_AT: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+};
+CFG
+          # If secrets are blank the variables will be empty; fallback happens client side.
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
