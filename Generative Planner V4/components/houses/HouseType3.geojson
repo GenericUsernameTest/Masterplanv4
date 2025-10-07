@@ -1,7 +1,0 @@
-{
-"type": "FeatureCollection",
-"name": "HouseType3",
-"features": [
-{ "type": "Feature", "properties": { "Layer": "House", "PaperSpace": null, "SubClasses": "AcDbEntity:AcDbPolyline", "Linetype": null, "EntityHandle": "2D1", "Text": null }, "geometry": { "type": "LineString", "coordinates": [ [ 26.390944217315091, 68.155847122320026 ], [ 38.822285124136421, 68.155847122320026 ], [ 38.822285124136421, 59.414246498730407 ], [ 26.390944217315091, 59.414246498730407 ], [ 26.390944217315091, 68.155847122320026 ], [ 26.390944217315091, 68.163263862300155 ] ] } }
-]
-}
