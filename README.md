@@ -49,6 +49,41 @@ Adjust the GitHub Action to add caching, vulnerability scanning, or multi-arch b
 
 ---
 Feel free to request a Pages + external API split scaffold if you decide to go that route.
+# 8. Repository Cleanup (Duplicate Directory Removal)
+Previously a full duplicate application directory named `Generative Planner V4/` existed. It has been removed to prevent confusion and divergence. The active, canonical codebase is now only at the root (`index.html`, `js/`, `data-server.js`, `data/`, etc.). If you had uncommitted changes there, re-introduce them manually in the root structure.
+
+# 9. Sharing a Public URL
+You have two parts: the static frontend and the dynamic save API. To share with your team:
+
+Option A: Single Hosted Server (simplest)
+1. Deploy the container image (see Section 1) to a service (Render, Fly.io, Railway, Cloud Run, ECS, etc.).
+2. Expose port 4000 → HTTPS. 
+3. Share the resulting URL (e.g., `https://planner.example.com`). Both UI & saves work on same origin.
+
+Option B: GitHub Pages (static) + External API
+1. Keep GitHub Pages enabled for static assets: `https://<user>.github.io/<repo>/`.
+2. Deploy the Node API elsewhere (e.g., `https://api-planner.example.com`).
+3. Provide API base via:
+	- Secret `API_BASE` in Actions (injected into `config.js`), or
+	- Query parameter `?apiBase=https://api-planner.example.com`, or
+	- Hardcoded assignment `window.API_BASE` before scripts.
+4. Team visits Pages URL; boundary saves POST to external API.
+
+Option C: Temporary Tunnel (demo)
+1. Run locally: `node data-server.js`.
+2. Start tunnel (`ngrok http 4000` → gives `https://xyz.ngrok.app`).
+3. Share Page with `?apiBase=https://xyz.ngrok.app` or just send tunnel URL if serving UI locally only.
+
+Recommended: Option A for lowest friction; Option B if you must keep frontend static & decoupled.
+
+Verification Script:
+```
+curl -f https://planner.example.com/ping
+curl -f https://api-planner.example.com/ping
+```
+Expect: `✅ Data server running`
+
+If saves still download on Pages, open console to inspect candidate failures and ensure `API_BASE` resolves.
 # Masterplanv4
 # GitHub Pages Deployment
 
