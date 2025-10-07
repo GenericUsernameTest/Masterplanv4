@@ -204,31 +204,52 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
     }
   } catch (e) { /* ignore */ }
   const explicitApiBase = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : null;
-  const apiBase = (function() {
-    try {
-      if (explicitApiBase) {
-        return explicitApiBase.replace(/\/$/, '');
+
+  // Build candidate API bases to probe in order
+  const candidates = [];
+  if (explicitApiBase) candidates.push(explicitApiBase.replace(/\/$/, ''));
+  // Same origin if already on :4000 or dynamic server host
+  if (window.location.port === '4000') candidates.push(window.location.origin);
+  // Codespaces style forwarded host
+  if (window.location.hostname.includes('github.dev') || window.location.hostname.includes('app.github.dev')) {
+    candidates.push(window.location.origin.replace(/https?:\/\//,'https://'));
+  }
+  // Default localhost:4000
+  candidates.push(`${window.location.protocol}//${window.location.hostname}:4000`);
+  // Fallback hardcoded localhost
+  candidates.push('http://127.0.0.1:4000');
+
+  async function tryPost(baseList) {
+    for (const base of baseList) {
+      if (!base) continue;
+      try {
+        // Quick /ping to verify
+        const ping = await fetch(`${base}/ping`, { cache: 'no-store' });
+        if (!ping.ok) throw new Error(`Ping failed ${ping.status}`);
+        console.log(`🔌 Using API base: ${base}`);
+        console.log(`📡 Posting analysis to ${base}/save-analysis for ${siteId}`);
+        const res = await fetch(`${base}/save-analysis`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const txt = await res.text().catch(() => '');
+        if (!res.ok) throw new Error(`Save failed (${res.status}) ${txt || res.statusText}`);
+        console.log('💾 Saved analysis for site:', siteId);
+        if (typeof showNotification === 'function') {
+          showNotification('📁 Analysis Saved', `Site analysis saved for ${siteId}`, 'success');
+        }
+        try { return JSON.parse(txt || '{}'); } catch { return {}; }
+      } catch (err) {
+        console.warn(`⚠️ API base candidate failed: ${base} -> ${err.message}`);
       }
-      if (isGitHubPages) {
-        return null; // Offline mode unless API_BASE supplied
-      }
-      // If site served from same origin & port (common when express serves frontend)
-      if (window.location.port === '4000') {
-        return window.location.origin;
-      }
-      // If running on a forwarded port (Codespaces style), still use origin
-      if (window.location.hostname.includes('github.dev') || window.location.hostname.includes('app.github.dev')) {
-        return window.location.origin.replace(/https?:\/\//,'https://');
-      }
-      // Default fallback to same host :4000
-      return `${window.location.protocol}//${window.location.hostname}:4000`;
-    } catch (e) {
-      return 'http://127.0.0.1:4000';
     }
-  })();
-  if (!apiBase) {
-    console.log('🌐 Offline mode (no API_BASE) detected: creating downloadable analysis only.');
-    // Provide downloadable file immediately
+    return null;
+  }
+
+  return tryPost(candidates).then(result => {
+    if (result) return result;
+    console.log('🌐 All API candidates failed; providing downloadable analysis file.');
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -240,11 +261,13 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     if (typeof showNotification === 'function') {
-      showNotification('📁 Analysis Generated', 'Downloaded locally (offline mode)', 'info');
+      showNotification('📁 Analysis Generated (Local)', 'Server not reachable; file downloaded.', 'info');
     }
-    return Promise.resolve({ offline: true, siteId });
-  }
-  console.log(`📡 Posting analysis to ${apiBase}/save-analysis for ${siteId}`);
+    return { offline: true, siteId };
+  });
+  
+  // (Old single apiBase path removed in favor of multi-probe logic)
+  /*
   return fetch(`${apiBase}/save-analysis`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -289,6 +312,7 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
       throw err; // rethrow original
     }
   });
+  */
 }
 
 // Helper: fetch and log existing analyses (debug utility)
