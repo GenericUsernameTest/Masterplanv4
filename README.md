@@ -51,9 +51,15 @@ Feel free to request a Pages + external API split scaffold if you decide to go t
 This repository includes a GitHub Actions workflow (`.github/workflows/pages.yml`) that publishes a static version of the app to GitHub Pages whenever you push to `main`.
 
 Behavior differences on Pages:
-- No Node server is available (GitHub Pages = static hosting).
-- Boundary saves fall back to offline mode: a `site-<timestamp>-analysis.json` file is downloaded instead of being POSTed to `/save-analysis`.
-- The dynamic API base logic in `exportSiteAnalysisToDataFolder` detects `github.io` and disables remote calls.
+
+### Enabling Remote Saves From Pages
+Deploy the Node server (Docker image provided) to a host (Render/Fly/Cloud Run/etc.) and set in `index.html`:
+```
+<script>
+	window.API_BASE = 'https://your-deployed-api.example.com';
+</script>
+```
+When `window.API_BASE` is defined, even on GitHub Pages the app will POST to `${API_BASE}/save-analysis` instead of offline downloading.
 
 To enable Pages:
 1. Open Repository Settings → Pages.
