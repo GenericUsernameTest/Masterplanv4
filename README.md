@@ -26,7 +26,11 @@ Port: 4000 (the server listens on 4000).
 GitHub Pages can only host static files; the `/save-analysis` API requires a server. You could host only the frontend there and point API calls to a separately deployed container (e.g., on Fly/Render). To do this, change the dynamic base URL logic in `exportSiteAnalysisToDataFolder` if needed to point to your API origin.
 
 ## 4. Environment Variables / Secrets
-Currently the Mapbox token is embedded inline. For production, move it to an environment variable and inject at build or runtime (e.g., serve a small `/config.js`).
+Runtime config now comes from `/config.js` when served by the Node server. Set env vars before starting:
+```
+MAPBOX_TOKEN=pk.yourtoken API_BASE=https://your-api-host node data-server.js
+```
+If `MAPBOX_TOKEN` is absent the fallback token (defined inline) is used. On GitHub Pages (static) it fetches `config.js` (will 404) and then falls back.
 
 ## 5. Verifying Deployment
 After deploy, check:

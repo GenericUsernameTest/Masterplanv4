@@ -14,6 +14,16 @@ app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
 app.use("/data", express.static(DATA_DIR));
 
+// ✅ Runtime config endpoint (served as JS that sets window.RUNTIME_CONFIG)
+app.get('/config.js', (req, res) => {
+  const config = {
+    MAPBOX_TOKEN: process.env.MAPBOX_TOKEN || null,
+    API_BASE: process.env.API_BASE || null,
+    VERSION: process.env.GIT_SHA || process.env.HOSTNAME || 'dev'
+  };
+  res.type('application/javascript').send(`window.RUNTIME_CONFIG = ${JSON.stringify(config, null, 2)};`);
+});
+
 // ✅ Health check
 app.get("/ping", (req, res) => res.send("✅ Data server running"));
 

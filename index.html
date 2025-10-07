@@ -20,14 +20,23 @@
   <!-- Turf.js -->
   <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
 
-  <!-- Mapbox Token (must be before main.js) -->
+  <!-- Runtime Config (tries /config.js, falls back to inline defaults) -->
   <script>
-    // Set your token here
-    window.MAPBOX_TOKEN = 'pk.eyJ1IjoiYXNlbWJsIiwiYSI6ImNtZTMxcG90ZzAybWgyanNjdmdpbGZkZHEifQ.3XPuSVFR0s8kvnRnY1_2mw';
-    // Optional: define API_BASE to enable remote saving when hosted on GitHub Pages
-    // Example after deploying API somewhere: window.API_BASE = 'https://your-api-host.example.com';
-    // Leave undefined to stay in offline (download) mode on github.io
-    // window.API_BASE = '';
+    (function(){
+      const fallback = {
+        MAPBOX_TOKEN: 'pk.eyJ1IjoiYXNlbWJsIiwiYSI6ImNtZTMxcG90ZzAybWgyanNjdmdpbGZkZHEifQ.3XPuSVFR0s8kvnRnY1_2mw',
+        API_BASE: null
+      };
+      function apply(cfg){
+        window.RUNTIME_CONFIG = cfg;
+        if (cfg.MAPBOX_TOKEN) window.MAPBOX_TOKEN = cfg.MAPBOX_TOKEN;
+        if (cfg.API_BASE) window.API_BASE = cfg.API_BASE;
+      }
+      fetch('config.js', { cache: 'no-store' })
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(js => { try { eval(js); if (window.RUNTIME_CONFIG) { apply(window.RUNTIME_CONFIG); } else { apply(fallback); } } catch(e){ console.warn('Config eval failed, using fallback', e); apply(fallback); } })
+        .catch(()=> { apply(fallback); });
+    })();
   </script>
 
   <!-- Local CSS -->

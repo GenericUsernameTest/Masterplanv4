@@ -8,6 +8,7 @@
     "chokidar": "^4.0.3"
   },
 "scripts": {
+  "start": "node data-server.js",
   "annotate": "node scripts/annotate-boundary.js",
   "annotate-latest": "node scripts/annotate-latest.js",
   "watch-data": "node scripts/watch-data.js",
