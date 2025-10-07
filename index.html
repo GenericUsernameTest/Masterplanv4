@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Masterplanning Tool</title>
+
+  <!-- Mapbox GL JS -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+
+  <!-- Mapbox Geocoder -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css" />
+
+  <!-- Mapbox Draw -->
+  <script src="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@mapbox/mapbox-gl-draw@1.4.3/dist/mapbox-gl-draw.css" type="text/css" />
+
+  <!-- Turf.js -->
+  <script src="https://unpkg.com/@turf/turf@7/turf.min.js"></script>
+
+  <!-- Mapbox Token (must be before main.js) -->
+  <script>
+    // Set your token here
+    window.MAPBOX_TOKEN = 'pk.eyJ1IjoiYXNlbWJsIiwiYSI6ImNtZTMxcG90ZzAybWgyanNjdmdpbGZkZHEifQ.3XPuSVFR0s8kvnRnY1_2mw';
+  </script>
+
+  <!-- Local CSS -->
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <!-- Top Nav with centered geocoder -->
+  <div class="navbar">
+    <div class="logo-container">
+      <a href="profile.html">
+        <img src="images/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'" />
+      </a>
+      <div class="divider-line"></div>
+      <div id="site-name-nav">
+        <span contenteditable="true">Untitled Site</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div id="geocoder" class="geocoder"></div>
+      <button class="nav-ellipsis" id="nav-ellipsis" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="nav-menu" title="Menu">⋮</button>
+      <div id="nav-menu" class="nav-dropdown" role="menu" aria-hidden="true">
+        <button class="menu-item" role="menuitem" id="house-types-btn" type="button">
+          House Types
+        </button>
+        <button class="menu-item" role="menuitem" id="reset-boundary-btn" type="button">
+          Reset Boundary
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom-left site info -->
+  <div class="area-toolbar">
+    <h3>Site Information</h3>
+    <div class="area-item">
+      <span class="area-label">Site ID:</span>
+      <span class="area-value" id="current-site-id" style="font-family: monospace; font-size: 11px; color: #667eea;">Loading...</span>
+    </div>
+    <div class="area-item">
+      <span class="area-label">Site Area:</span>
+      <span class="area-value" id="site-area">0 ha</span>
+    </div>
+    <div  class="area-item">
+      <span class="area-label">Homes:</span>
+      <span class="area-value" id="home-count">0</span>
+    </div>
+    <div class="area-item">
+      <span class="area-label">Housing Density:</span>
+      <span class="area-value" id="density">N/A</span>
+    </div>
+    <div class="style-info" id="style-info"></div>
+  </div>
+
+  <!-- Block Placement Panel -->
+  <div id="block-placement-panel" class="block-panel">
+    <h3>Place Blocks</h3>
+    <div class="block-buttons">
+      <button class="block-btn" data-block="Block1" type="button">
+        Block 1
+      </button>
+      <button class="block-btn" data-block="Block2" type="button">
+        Block 2
+      </button>
+      <button class="block-btn" data-block="Block3" type="button">
+        Block 3
+      </button>
+      <button class="block-btn" data-block="Block4" type="button">
+        Block 4
+      </button>
+      <button class="block-btn" data-block="Block5" type="button">
+        Block 5
+      </button>
+    </div>
+    <div class="block-actions">
+      <button class="edit-block-btn ai-analysis-btn" id="ai-analyze-site-btn" type="button">
+        🤖 AI Analyze Site
+      </button>
+      <div class="ai-upload-container">
+        <input type="file" id="ai-response-file" accept=".json" style="display: none;">
+        <button class="edit-block-btn ai-upload-btn" id="ai-upload-btn" type="button">
+          📤 Upload AI Response
+        </button>
+      </div>
+      <button class="edit-block-btn" id="block3-edit-btn" type="button">
+        ✏️ Edit Block 3
+      </button>
+      <button class="edit-block-btn" id="road-extension-btn" type="button">
+        🛣️ Extend Roads
+      </button>
+    </div>
+    <button class="block-cancel-btn" id="block-cancel-btn" type="button">
+      Cancel Placement
+    </button>
+    <button id="generate-homes" class="generate-homes-btn" type="button">
+      🏠 Generate Homes
+    </button>
+  </div>
+
+
+
+  <script>
+    console.log("Diagnostics:",
+      "mapboxgl:", typeof mapboxgl,
+      "MapboxDraw:", typeof MapboxDraw,
+      "turf:", typeof turf,
+      "MapboxGeocoder:", typeof MapboxGeocoder,
+      "MAPBOX_TOKEN:", window.MAPBOX_TOKEN ? "OK" : "MISSING"
+    );
+    
+    // Library loading check with retry
+    function checkLibrariesAndInit() {
+      const libs = {
+        mapboxgl: typeof mapboxgl !== 'undefined',
+        MapboxDraw: typeof MapboxDraw !== 'undefined',
+        turf: typeof turf !== 'undefined',
+        MapboxGeocoder: typeof MapboxGeocoder !== 'undefined'
+      };
+      
+      const missing = Object.entries(libs).filter(([name, loaded]) => !loaded).map(([name]) => name);
+      
+      if (missing.length === 0) {
+        console.log('✅ All libraries loaded successfully');
+        return true;
+      } else {
+        console.log('⏳ Waiting for libraries:', missing);
+        return false;
+      }
+    }
+    
+    // Wait for all libraries to load before starting app
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
+    
+    function waitForLibraries() {
+      attempts++;
+      if (checkLibrariesAndInit()) {
+        console.log('🚀 Starting application...');
+        // Delay slightly to ensure DOM is ready
+        setTimeout(() => {
+          if (window.startApp && !window.appInitialized) {
+            window.startApp();
+            window.appInitialized = true;
+          }
+        }, 100);
+      } else if (attempts < maxAttempts) {
+        setTimeout(waitForLibraries, 100);
+      } else {
+        console.error('❌ Failed to load required libraries after 5 seconds');
+        alert('Error: Required mapping libraries failed to load. Please refresh the page.');
+      }
+    }
+    
+    // Start the loading check
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', waitForLibraries);
+    } else {
+      waitForLibraries();
+    }
+  </script>
+
+  <!-- Load JavaScript modules -->
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/main.js"></script>
+  <script defer src="js/house-generator.js"></script>
+  
+</body>
+</html>

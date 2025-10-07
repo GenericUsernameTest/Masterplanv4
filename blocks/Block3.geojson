@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "Block3",
+"features": [
+{ "type": "Feature", "properties": { "Layer": "ROAD_SECONDARY", "PaperSpace": null, "SubClasses": "AcDbEntity:AcDbLine", "Linetype": null, "EntityHandle": "2D3", "Text": null }, "geometry": { "type": "LineString", "coordinates": [ [ 1143.525930511108072, 1555.74946858277508, 0.0 ], [ 1480.334308283331893, 1555.74946858277508, 0.0 ] ] } }
+]
+}

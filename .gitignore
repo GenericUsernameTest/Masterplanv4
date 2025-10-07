@@ -1,0 +1,10 @@
+# Node
+node_modules
+package-lock.json
+# Env
+.env
+.env.local
+.env.*
+Generative Planner V4/.env
+# Logs
+npm-debug.log
