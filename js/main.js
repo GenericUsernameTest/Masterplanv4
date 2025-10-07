@@ -207,6 +207,7 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
 
   // Build candidate API bases to probe in order
   const candidates = [];
+  console.log('🔍 Save diagnostics: starting candidate assembly');
   if (explicitApiBase) candidates.push(explicitApiBase.replace(/\/$/, ''));
   // Same origin if already on :4000 or dynamic server host
   if (window.location.port === '4000') candidates.push(window.location.origin);
@@ -218,14 +219,35 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
   candidates.push(`${window.location.protocol}//${window.location.hostname}:4000`);
   // Fallback hardcoded localhost
   candidates.push('http://127.0.0.1:4000');
+  console.log('🔍 Candidate API bases (ordered):', candidates);
+
+  // Mixed content guard: if page is https and candidate is http different host => likely blocked
+  const pageIsHttps = window.location.protocol === 'https:';
+
+  async function pingBase(base) {
+    try {
+      if (!base) throw new Error('empty base');
+      if (pageIsHttps && base.startsWith('http:') && !base.includes('127.0.0.1') && !base.includes('localhost')) {
+        throw new Error('blocked mixed content');
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const ping = await fetch(`${base}/ping`, { cache: 'no-store', signal: controller.signal });
+      clearTimeout(timeout);
+      if (!ping.ok) throw new Error(`ping status ${ping.status}`);
+      return true;
+    } catch (e) {
+      console.warn(`⚠️ Ping failed for ${base}: ${e.message}`);
+      return false;
+    }
+  }
 
   async function tryPost(baseList) {
     for (const base of baseList) {
       if (!base) continue;
+      const reachable = await pingBase(base);
+      if (!reachable) continue;
       try {
-        // Quick /ping to verify
-        const ping = await fetch(`${base}/ping`, { cache: 'no-store' });
-        if (!ping.ok) throw new Error(`Ping failed ${ping.status}`);
         console.log(`🔌 Using API base: ${base}`);
         console.log(`📡 Posting analysis to ${base}/save-analysis for ${siteId}`);
         const res = await fetch(`${base}/save-analysis`, {
@@ -241,7 +263,7 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
         }
         try { return JSON.parse(txt || '{}'); } catch { return {}; }
       } catch (err) {
-        console.warn(`⚠️ API base candidate failed: ${base} -> ${err.message}`);
+        console.warn(`⚠️ Save failed for ${base}: ${err.message}`);
       }
     }
     return null;
@@ -314,6 +336,20 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
   });
   */
 }
+
+// Expose manual diagnostics for saving
+window.diagnoseSave = function() {
+  console.log('🔬 diagnoseSave -> current window.API_BASE =', window.API_BASE);
+  console.log('Location:', window.location.href);
+  console.log('Attempting boundary export with diagnostics only (no changes)...');
+};
+window.forceSaveAnalysis = async function() {
+  if (!window.siteBoundary) { console.warn('No siteBoundary to save'); return; }
+  const coords = window.siteBoundary.geometry.coordinates[0];
+  const sid = window.getCurrentSiteId ? window.getCurrentSiteId() : 'site-debug';
+  console.log('🧪 forceSaveAnalysis triggered for', sid);
+  await exportSiteAnalysisToDataFolder(coords, sid);
+};
 
 // Helper: fetch and log existing analyses (debug utility)
 async function listExistingAnalyses() {
