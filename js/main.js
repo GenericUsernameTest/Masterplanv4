@@ -1210,8 +1210,16 @@ function initializeMap() {
   
   // All library checks are done in HTML before this function is called
   if (!window.MAPBOX_TOKEN) {
-    console.error('❌ Mapbox token not set!');
-    return;
+    if (!window._mapTokenRetry) window._mapTokenRetry = 0;
+    if (window._mapTokenRetry < 5 && !window.RUNTIME_CONFIG_READY) {
+      console.log('⏳ MAPBOX_TOKEN not ready yet, waiting for runtime config...');
+      window._mapTokenRetry++;
+      return setTimeout(initializeMap, 150);
+    }
+    if (!window.MAPBOX_TOKEN) {
+      console.error('❌ Mapbox token not set after waiting for runtime config!');
+      return;
+    }
   }
   
   if (typeof MapboxDraw === 'undefined') {
