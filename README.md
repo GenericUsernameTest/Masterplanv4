@@ -46,3 +46,18 @@ Adjust the GitHub Action to add caching, vulnerability scanning, or multi-arch b
 ---
 Feel free to request a Pages + external API split scaffold if you decide to go that route.
 # Masterplanv4
+# GitHub Pages Deployment
+
+This repository includes a GitHub Actions workflow (`.github/workflows/pages.yml`) that publishes a static version of the app to GitHub Pages whenever you push to `main`.
+
+Behavior differences on Pages:
+- No Node server is available (GitHub Pages = static hosting).
+- Boundary saves fall back to offline mode: a `site-<timestamp>-analysis.json` file is downloaded instead of being POSTed to `/save-analysis`.
+- The dynamic API base logic in `exportSiteAnalysisToDataFolder` detects `github.io` and disables remote calls.
+
+To enable Pages:
+1. Open Repository Settings → Pages.
+2. Under Build and deployment, choose GitHub Actions (the workflow will appear automatically after first successful run).
+3. After deployment, visit: `https://<your-username>.github.io/<repo-name>/`.
+
+If you later deploy an external API (e.g., Render/Fly), update the GitHub Pages detection block to point to that API base instead of offline mode.

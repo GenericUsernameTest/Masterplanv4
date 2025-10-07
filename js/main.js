@@ -187,8 +187,12 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
   };
 
   // Determine API base dynamically so it works in Codespaces/containers or when proxied
+  const isGitHubPages = /github\.io$/i.test(window.location.hostname);
   const apiBase = (function() {
     try {
+      if (isGitHubPages) {
+        return null; // Force offline mode on GitHub Pages
+      }
       // If site served from same origin & port (common when express serves frontend)
       if (window.location.port === '4000') {
         return window.location.origin;
@@ -203,6 +207,24 @@ function exportSiteAnalysisToDataFolder(boundary, siteId) {
       return 'http://127.0.0.1:4000';
     }
   })();
+  if (!apiBase) {
+    console.log('🌐 GitHub Pages detected: running in offline/local-only analysis mode.');
+    // Provide downloadable file immediately
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${siteId}-analysis.json`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (typeof showNotification === 'function') {
+      showNotification('📁 Analysis Generated', 'Downloaded locally (offline mode)', 'info');
+    }
+    return Promise.resolve({ offline: true, siteId });
+  }
   console.log(`📡 Posting analysis to ${apiBase}/save-analysis for ${siteId}`);
   return fetch(`${apiBase}/save-analysis`, {
     method: 'POST',
