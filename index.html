@@ -23,6 +23,10 @@
   <!-- Runtime Config (tries /config.js, falls back to inline defaults) -->
   <script>
     (function(){
+      // Promise that resolves when runtime config (or fallback) has been applied
+      if (!window.CONFIG_READY_PROMISE) {
+        window.CONFIG_READY_PROMISE = new Promise(resolve => { window._resolveConfigReady = resolve; });
+      }
       const fallback = {
         MAPBOX_TOKEN: 'pk.eyJ1IjoiYXNlbWJsIiwiYSI6ImNtZTMxcG90ZzAybWgyanNjdmdpbGZkZHEifQ.3XPuSVFR0s8kvnRnY1_2mw',
         API_BASE: null
@@ -32,6 +36,7 @@
         if (cfg.MAPBOX_TOKEN) window.MAPBOX_TOKEN = cfg.MAPBOX_TOKEN;
         if (cfg.API_BASE) window.API_BASE = cfg.API_BASE;
         window.RUNTIME_CONFIG_READY = true;
+        if (typeof window._resolveConfigReady === 'function') { try { window._resolveConfigReady(); } catch(e) {} }
       }
       fetch('config.js', { cache: 'no-store' })
         .then(r => r.ok ? r.text() : Promise.reject())

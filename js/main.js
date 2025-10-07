@@ -1211,13 +1211,23 @@ function initializeMap() {
   // All library checks are done in HTML before this function is called
   if (!window.MAPBOX_TOKEN) {
     if (!window._mapTokenRetry) window._mapTokenRetry = 0;
-    if (window._mapTokenRetry < 5 && !window.RUNTIME_CONFIG_READY) {
-      console.log('⏳ MAPBOX_TOKEN not ready yet, waiting for runtime config...');
-      window._mapTokenRetry++;
-      return setTimeout(initializeMap, 150);
+    if (!window.RUNTIME_CONFIG_READY) {
+      // Defer until runtime config promise resolves
+      console.log('⏳ MAPBOX_TOKEN not ready yet; deferring map init until config promise resolves...');
+      (window.CONFIG_READY_PROMISE || Promise.resolve()).then(() => {
+        // Small timeout to ensure globals applied
+        setTimeout(() => {
+          if (!window.MAPBOX_TOKEN) {
+            console.error('❌ Mapbox token still missing after config ready. Aborting map init.');
+            return;
+          }
+          initializeMap();
+        }, 50);
+      });
+      return;
     }
     if (!window.MAPBOX_TOKEN) {
-      console.error('❌ Mapbox token not set after waiting for runtime config!');
+      console.error('❌ Mapbox token not set after runtime config readiness!');
       return;
     }
   }
@@ -3593,10 +3603,25 @@ window.updateSiteIdDisplay = updateSiteIdDisplay;
 updateSiteIdDisplay();
 
 // Create a proper startApp function for the HTML to call
-function startApp() {
+async function startApp() {
   if (window.appInitialized) {
     console.log('⚠️ App already initialized, skipping...');
     return;
+  }
+
+  // Await runtime config (with timeout safeguard)
+  try {
+    const configPromise = window.CONFIG_READY_PROMISE || Promise.resolve();
+    await Promise.race([
+      configPromise,
+      new Promise(resolve => setTimeout(resolve, 1500)) // 1.5s max wait
+    ]);
+  } catch (e) {
+    console.warn('Config promise issue:', e);
+  }
+
+  if (!window.MAPBOX_TOKEN) {
+    console.warn('⚠️ MAPBOX_TOKEN still missing at startApp; proceeding may cause map init failure.');
   }
 
   console.log('🚀 Starting Masterplanning Tool...');
